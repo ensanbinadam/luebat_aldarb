@@ -170,8 +170,8 @@
 
     <!-- تذييل -->
     <div class="footer">
-فكرة وإعداد/فنون الرياضيات ـ إشراف المعلمة/سعاد الغامدي ـ تنفيذ/الذكاء الاصطناعي
-   </div>
+        فكرة وإعداد/فنون الرياضيات ـ إشراف المعلمة/سعاد الغامدي ـ تنفيذ/الذكاء الاصطناعي
+    </div>
 
     <script>
         const scoreEl = document.getElementById("score");
@@ -189,6 +189,7 @@
         let hasAnswered = false;
         let isGameEnded = false;
         let currentQuestion = null;
+        let lastQuestion = null;
         let fallIntervals = [];
 
         function randomInt(min, max) {
@@ -196,18 +197,28 @@
         }
 
         function generateQuestion() {
-            const num1 = randomInt(1, 10);
-            const num2 = randomInt(1, 10);
-            const correctAnswer = num1 * num2;
+            let num1, num2, correctAnswer;
+
+            do {
+                num1 = randomInt(1, 10);
+                num2 = randomInt(1, 10);
+                correctAnswer = num1 * num2;
+            } while (lastQuestion && lastQuestion.num1 === num1 && lastQuestion.num2 === num2);
+
+            lastQuestion = { num1, num2 };
 
             questionBox.textContent = `${num1} × ${num2} = ؟`.replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[digit]);
 
             const answers = new Set();
             answers.add(correctAnswer);
 
+            // Generate wrong answers based on the tables of num1 and num2
             while (answers.size < 3) {
-                const wrongAnswer = randomInt(1, 100);
-                if (!answers.has(wrongAnswer)) answers.add(wrongAnswer);
+                const wrongAnswer = Math.random() < 0.5 ? num1 * randomInt(1, 10) : num2 * randomInt(1, 10);
+
+                if (!answers.has(wrongAnswer) && wrongAnswer !== correctAnswer) {
+                    answers.add(wrongAnswer);
+                }
             }
 
             return {
@@ -266,7 +277,7 @@
 
         function animateCircle(circle) {
             let top = parseInt(circle.style.top.replace("px", "")) || -50;
-            const fallSpeed = 1.5;
+            const fallSpeed = 1;
 
             const fallInterval = setInterval(() => {
                 if (isPaused || isGameEnded) {
@@ -297,13 +308,8 @@
         function startGame() {
             if (isPaused || isGameEnded) return;
 
-            if (currentQuestion) {
-                dropAnswers(currentQuestion); // Resume the current question
-                currentQuestion = null; // Clear after resuming
-            } else {
-                const questionData = generateQuestion();
-                dropAnswers(questionData);
-            }
+            const questionData = generateQuestion();
+            dropAnswers(questionData);
         }
 
         function restartGame() {
@@ -315,7 +321,7 @@
             isPaused = false;
             isGameEnded = false;
             hasAnswered = false;
-            currentQuestion = null;
+            lastQuestion = null;
             fallIntervals.forEach(clearInterval);
             fallIntervals = [];
             startGame();
